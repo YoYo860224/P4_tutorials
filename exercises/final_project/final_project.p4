@@ -96,7 +96,25 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
     }
+
+    action set_egress_spec(bit<9> port) {
+        standard_metadata.egress_spec = port;
+        hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+    }
     
+    table dircet_forward {
+        key = {
+            standard_metadata.ingress_port: exact;
+        }
+        actions = {
+            set_egress_spec;
+            drop;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
+
     table normal_forword {
         key = {
             hdr.ipv4.dstAddr: lpm;
@@ -110,13 +128,12 @@ control MyIngress(inout headers hdr,
         default_action = NoAction();
     }
 
-    table diffserv_send {
+    table normal_return {
         key = {
-            hdr.ipv4.dstAddr: lpm;
-            hdr.ipv4.diffserv: exact;
+            hdr.ipv4.srcAddr: lpm;
         }
         actions = {
-            ipv4_forward;
+            set_egress_spec;
             drop;
             NoAction;
         }
@@ -126,8 +143,9 @@ control MyIngress(inout headers hdr,
     
     apply {
         if (hdr.ipv4.isValid()) {
+            dircet_forward.apply();
             normal_forword.apply();
-            diffserv_send.apply();
+            normal_return.apply();
         }
     }
 }

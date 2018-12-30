@@ -5,15 +5,6 @@
   "table_entries": [
     {
       "table": "MyIngress.normal_forword",
-      "default_action": true,
-      "action_name": "MyIngress.ipv4_forward",
-      "action_params": {
-        "dstAddr": "00:00:00:00:01:01",
-        "port": 4
-      }
-    },
-    {
-      "table": "MyIngress.normal_forword",
       "match": {
         "hdr.ipv4.dstAddr": ["10.0.1.11", 32]
       },
@@ -37,12 +28,23 @@
     {
       "table": "MyIngress.normal_forword",
       "match": {
-        "hdr.ipv4.dstAddr": ["10.0.1.13", 32]
+        "hdr.ipv4.dstAddr": ["10.0.2.21", 32]
       },
       "action_name": "MyIngress.ipv4_forward",
       "action_params": {
-        "dstAddr": "00:00:00:00:01:0d",
+        "dstAddr": "00:00:00:00:02:15",
         "port": 3
+      }
+    },
+    {
+      "table": "MyIngress.normal_forword",
+      "match": {
+        "hdr.ipv4.dstAddr": ["10.0.2.22", 32]
+      },
+      "action_name": "MyIngress.ipv4_forward",
+      "action_params": {
+        "dstAddr": "00:00:00:00:02:16",
+        "port": 4
       }
     }
   ]

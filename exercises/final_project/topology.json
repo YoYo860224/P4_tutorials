@@ -2,30 +2,26 @@
     "hosts": [
         "h11",
         "h12",
-        "h13",
         "h21",
-        "h22",
-        "h31",
-        "h32",
-        "h33"
+        "h22"
     ],
     "switches": {
         "s1": { "runtime_json" : "s1-runtime.json" },
         "s2": { "runtime_json" : "s2-runtime.json" },
-        "s3": { "runtime_json" : "s3-runtime.json" }
+        "s3": { "runtime_json" : "s3-runtime.json" },
+        "s4": { "runtime_json" : "s4-runtime.json" }
     },
     "links": [
-        ["h11", "s1"], 
-        ["h12", "s1"],
-        ["h13", "s1"],
-        ["s1", "s2"], 
+        ["h11", "s1", "0ms", 1000], 
+        ["h12", "s1", "0ms", 1000], 
 
-        ["h21", "s2"], 
-        ["h22", "s2"],
-        ["s2", "s3"], 
+        ["s1", "s3", "0ms", 1000], 
+        ["s1", "s4", "0ms", 1000], 
 
-        ["h31", "s3"],
-        ["h32", "s3"],
-        ["h33", "s3"]
+        ["s3", "s2", "0ms", 1000], 
+        ["s4", "s2", "0ms", 1000], 
+
+        ["s2", "h21", "0ms", 1000], 
+        ["s2", "h22", "0ms", 1000]
     ]
 }
