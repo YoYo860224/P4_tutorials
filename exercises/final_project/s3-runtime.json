@@ -1,0 +1,49 @@
+{
+  "target": "bmv2",
+  "p4info": "build/final_project.p4info",
+  "bmv2_json": "build/final_project.json",
+  "table_entries": [
+    {
+      "table": "MyIngress.normal_forword",
+      "default_action": true,
+      "action_name": "MyIngress.ipv4_forward",
+      "action_params": {
+        "dstAddr": "00:00:00:00:01:01",
+        "port": 4
+      }
+    },
+    {
+      "table": "MyIngress.normal_forword",
+      "match": {
+        "hdr.ipv4.dstAddr": ["10.0.3.31", 32]
+      },
+      "action_name": "MyIngress.ipv4_forward",
+      "action_params": {
+        "dstAddr": "00:00:00:00:03:1f",
+        "port": 1
+      }
+    },
+    {
+      "table": "MyIngress.normal_forword",
+      "match": {
+        "hdr.ipv4.dstAddr": ["10.0.3.32", 32]
+      },
+      "action_name": "MyIngress.ipv4_forward",
+      "action_params": {
+        "dstAddr": "00:00:00:00:03:20",
+        "port": 2
+      }
+    },
+    {
+      "table": "MyIngress.normal_forword",
+      "match": {
+        "hdr.ipv4.dstAddr": ["10.0.3.33", 32]
+      },
+      "action_name": "MyIngress.ipv4_forward",
+      "action_params": {
+        "dstAddr": "00:00:00:00:03:21",
+        "port": 3
+      }
+    }
+  ]
+}
