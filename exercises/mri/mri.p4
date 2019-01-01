@@ -5,6 +5,7 @@
 const bit<8>  UDP_PROTOCOL = 0x11;
 const bit<16> TYPE_IPV4 = 0x800;
 const bit<5>  IPV4_OPTION_MRI = 31;
+const bit<32> MAX_TUNNEL_ID = 1 << 16;
 
 #define MAX_HOPS 9
 
@@ -152,6 +153,9 @@ control MyVerifyChecksum(inout headers hdr, inout metadata meta) {
 control MyIngress(inout headers hdr,
                   inout metadata meta,
                   inout standard_metadata_t standard_metadata) {
+    counter(MAX_TUNNEL_ID, CounterType.packets_and_bytes) cca;
+    counter(MAX_TUNNEL_ID, CounterType.packets_and_bytes) ccb;
+    
     action drop() {
         mark_to_drop();
     }
@@ -161,6 +165,8 @@ control MyIngress(inout headers hdr,
         hdr.ethernet.srcAddr = hdr.ethernet.dstAddr;
         hdr.ethernet.dstAddr = dstAddr;
         hdr.ipv4.ttl = hdr.ipv4.ttl - 1;
+        cca.count((bit<32>) 0);
+        ccb.count((bit<32>) 1);
     }
 
     table ipv4_lpm {
