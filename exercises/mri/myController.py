@@ -9,12 +9,17 @@ from time import sleep
 # Probably there's a better way of doing this.
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../../utils/'))
 
+from p4 import p4runtime_pb2
 import p4runtime_lib.bmv2
 from p4runtime_lib.error_utils import printGrpcError
 from p4runtime_lib.switch import ShutdownAllSwitchConnections
 import p4runtime_lib.helper
 
+# set some entry want to control: like delete or edit
+controlEntry = p4runtime_pb2.TableEntry()
+
 def rules1(p4info_helper, sw):
+    global controlEntry
     #1
     table_entry = p4info_helper.buildTableEntry(
         table_name="MyEgress.swtrace",
@@ -69,7 +74,7 @@ def rules1(p4info_helper, sw):
     print "Installed ingress tunnel rule on %s" % sw.name
 
     #5
-    table_entry = p4info_helper.buildTableEntry(
+    controlEntry = p4info_helper.buildTableEntry(
         table_name="MyIngress.ipv4_lpm",
         match_fields={
             "hdr.ipv4.dstAddr": ("10.0.2.22", 32)
@@ -79,8 +84,9 @@ def rules1(p4info_helper, sw):
             "dstAddr": "00:00:00:02:04:00",
             "port": 4
         })
-    sw.WriteTableEntry(table_entry)
-    print "Installed ingress tunnel rule on %s" % sw.name
+    sw.WriteTableEntry(controlEntry)
+
+    print "Installed ingress tunnel rule on %s" % sw.name    
 
 def rules2(p4info_helper, sw):
     #1
@@ -149,32 +155,6 @@ def rules2(p4info_helper, sw):
         })
     sw.WriteTableEntry(table_entry)
     print "Installed ingress tunnel rule on %s" % sw.name
-##########################
-
-def rules1cc(p4info_helper, sw):
-    #1
-    table_entry = p4info_helper.buildTableEntry(
-        table_name="MyEgress.swtrace",
-        default_action=True,
-        action_name="MyEgress.add_swtrace",
-        action_params={
-            "swid": 1
-        })
-    sw.WriteTableEntry(table_entry)
-    print "Installed ingress tunnel rule on %s" % sw.name
-
-def rules2cc(p4info_helper, sw):
-    #1
-    table_entry = p4info_helper.buildTableEntry(
-        table_name="MyEgress.swtrace",
-        default_action=True,
-        action_name="MyEgress.add_swtrace",
-        action_params={
-            "swid": 2
-        })
-    sw.WriteTableEntry(table_entry)
-    print "Installed ingress tunnel rule on %s" % sw.name
-##########################
 
 def readTableRules(p4info_helper, sw):
     """
@@ -190,7 +170,6 @@ def readTableRules(p4info_helper, sw):
             # TODO For extra credit, you can use the p4info_helper to translate
             #      the IDs in the entry to names
             table_name = p4info_helper.get_tables_name(entry.table_id)
-            print '%s: ' % table_name,
             for m in entry.match:
                 print p4info_helper.get_match_field_name(table_name, m.field_id),
                 print '%r' % (p4info_helper.get_match_field_value(m),),
@@ -227,9 +206,10 @@ def printCounter(p4info_helper, sw, counter_name, index):
                 sw.name, counter_name, index,
                 counter.data.packet_count, counter.data.byte_count
             )
-            return counter.data.packet_count
+            return counter.data.byte_count
 
 def main(p4info_file_path, bmv2_file_path):
+    global controlEntry
     # Instantiate a P4Runtime helper from the p4info file
     p4info_helper = p4runtime_lib.helper.P4InfoHelper(p4info_file_path)
 
@@ -269,15 +249,17 @@ def main(p4info_file_path, bmv2_file_path):
         ###########################################################################
         rules1(p4info_helper, s1)
         rules2(p4info_helper, s2)
-
         readTableRules(p4info_helper, s1)
         readTableRules(p4info_helper, s2)
 
+        lastBytes = 0
         while True:
-            sleep(2)
+            sleep(1)
             print '\n----- Reading tunnel counters -----'
-            x = printCounter(p4info_helper, s1, "MyIngress.cca", 0)
-            y = printCounter(p4info_helper, s1, "MyIngress.ccb", 1)
+            nowBytes = printCounter(p4info_helper, s1, "MyIngress.cca", 4)
+            BytePerSec = nowBytes - lastBytes
+            lastBytes = nowBytes
+            print BytePerSec3
         ###########################################################################
         ############################# End End End End #############################
         ###########################################################################
