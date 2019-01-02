@@ -85,8 +85,20 @@ def rules1(p4info_helper, sw):
             "port": 4
         })
     sw.WriteTableEntry(controlEntry)
+    print "Installed ingress tunnel rule on %s" % sw.name
 
-    print "Installed ingress tunnel rule on %s" % sw.name    
+    #6 countOut
+    table_entry = p4info_helper.buildTableEntry(
+        table_name="MyEgress.outTrace",
+        match_fields={
+            "hdr.ipv4.dstAddr": ("10.0.2.22", 32)
+        },
+        action_name="MyEgress.countOut",
+        action_params={
+            "index": 4
+        })
+    sw.WriteTableEntry(table_entry)
+    print "Installed ingress tunnel rule on %s" % sw.name
 
 def rules2(p4info_helper, sw):
     #1
@@ -252,14 +264,42 @@ def main(p4info_file_path, bmv2_file_path):
         readTableRules(p4info_helper, s1)
         readTableRules(p4info_helper, s2)
 
-        lastBytes = 0
+        entryEnable = True
+        nowTime = 0
+        keepTime = 0
+        byAt01 = 0
+        byAt02 = 0
+        byAt03 = 0
+        byAt04 = 0
+        byAt05 = 0
+ 
         while True:
-            sleep(1)
+            sleep(0.1)
+            nowTime += 0.1
             print '\n----- Reading tunnel counters -----'
-            nowBytes = printCounter(p4info_helper, s1, "MyIngress.cca", 4)
-            BytePerSec = nowBytes - lastBytes
-            lastBytes = nowBytes
-            print BytePerSec3
+            byAt05 = byAt04
+            byAt04 = byAt03
+            byAt03 = byAt02
+            byAt02 = byAt01
+            byAt01 = printCounter(p4info_helper, s1, "MyEgress.counter_out", 4)
+
+            BytePerSec = (byAt01 - byAt05) * 2
+
+            print BytePerSec
+            if nowTime - keepTime > 1:
+                if entryEnable == True and BytePerSec > 40000:
+                    entryEnable = False
+                    s1.DeleteTableEntry(controlEntry)
+                    keepTime = nowTime
+                    print 'Disable 5 seconds'
+                
+                if entryEnable == False and BytePerSec < 12500:
+                    entryEnable = True
+                    s1.WriteTableEntry(controlEntry)
+                    keepTime = nowTime
+                    print 'Enable 5 seconds'
+
+            
         ###########################################################################
         ############################# End End End End #############################
         ###########################################################################
@@ -269,8 +309,6 @@ def main(p4info_file_path, bmv2_file_path):
         printGrpcError(e)
 
     ShutdownAllSwitchConnections()
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='P4Runtime Controller')
