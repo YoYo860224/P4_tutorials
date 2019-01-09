@@ -193,7 +193,23 @@ control MyIngress(inout headers hdr,
 control MyEgress(inout headers hdr,
                  inout metadata meta,
                  inout standard_metadata_t standard_metadata) {
+                     
     counter(MAX_TUNNEL_ID, CounterType.packets_and_bytes) counter_out;
+    action countOut(bit<32> index) {
+        counter_out.count(index);
+    }
+
+    table outTrace {
+        key = {
+            hdr.ipv4.dstAddr: lpm;
+        }
+        actions = {
+            countOut;
+            NoAction;
+        }
+        size = 1024;
+        default_action = NoAction();
+    }
 
     action add_swtrace(switchID_t swid) { 
         hdr.mri.count = hdr.mri.count + 1;
@@ -211,28 +227,12 @@ control MyEgress(inout headers hdr,
 	    hdr.ipv4.totalLen = hdr.ipv4.totalLen + 8;
     }
 
-    action countOut(bit<32> index) {
-        counter_out.count(index);
-    }
-
     table swtrace {
         actions = { 
             add_swtrace; 
             NoAction; 
         }
         default_action = NoAction();      
-    }
-
-    table outTrace {
-        key = {
-            hdr.ipv4.dstAddr: lpm;
-        }
-        actions = {
-            countOut;
-            NoAction;
-        }
-        size = 1024;
-        default_action = NoAction();
     }
     
     apply {
